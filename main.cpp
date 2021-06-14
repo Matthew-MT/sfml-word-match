@@ -5,11 +5,42 @@ g++ -o main.exe main.cpp -Isfml-ui/sfml/include -Lsfml-ui/sfml/lib "-Wl,--start-
 #include "sfml-ui/main.hpp"
 #include <stdlib.h>
 #include <time.h>
+#include <random>
 
-const sf::Vector2u matcherSize = {4u, 4u};
+const sf::Vector2u matcherSize = {8u, 8u};
+const std::size_t letterMax = 182303;
+const std::vector<std::pair<char, std::size_t>> letterFreq{
+    {'e', 21912},
+    {'t', 16587},
+    {'a', 14810},
+    {'o', 14003},
+    {'i', 13318},
+    {'n', 12666},
+    {'s', 11450},
+    {'r', 10977},
+    {'h', 10795},
+    {'d', 7874},
+    {'l', 7253},
+    {'u', 5246},
+    {'c', 4943},
+    {'m', 4761},
+    {'f', 4200},
+    {'y', 3853},
+    {'w', 3819},
+    {'g', 3693},
+    {'p', 3316},
+    {'v', 2715},
+    {'b', 2019},
+    {'k', 1257},
+    {'x', 315},
+    {'q', 205},
+    {'j', 188},
+    {'z', 128}
+};
 
 int main(int argCount, char* args[]) {
-    std::srand(std::time(NULL));
+    std::mt19937_64 myRand;
+    myRand.seed(std::time(NULL));
     fstream words;
     words.open("./data/words_alpha.txt");
     std::vector<std::string> wordList, wordsUsed;
@@ -38,7 +69,16 @@ int main(int argCount, char* args[]) {
         for (std::size_t i = 0u; i < matcherSize.x; i++) {
             initArray.push_back({});
             for (std::size_t j = 0u; j < matcherSize.y; j++) {
-                UI::Button<> newButton{(std::string)("") + (char)('a' + (std::rand() % 26)), font};
+                std::size_t ticket = myRand() % letterMax, current = 0u;
+                char choice = 'e';
+                for (std::pair<char, std::size_t> letter : letterFreq) {
+                    current += letter.second;
+                    if (ticket < current) {
+                        choice = letter.first;
+                        break;
+                    }
+                }
+                UI::Button<> newButton{(std::string)("") + choice, font};
                 newButton.setHoverAction([=](UI::Button<>* button) -> void {
                     if (button->getFillColor().toInteger() != sf::Color::Cyan.toInteger() && button->getFillColor().toInteger() != sf::Color::Green.toInteger()) button->setFillColor(UI::sWhite, true);
                 });
@@ -121,7 +161,7 @@ int main(int argCount, char* args[]) {
         currentScene = mainScene;
 
         return [&](const sf::Time& time) -> void {
-            if (time.asSeconds() == time.asMicroseconds() / 1000000) std::srand(std::time(NULL));
+            if (time.asSeconds() == time.asMicroseconds() / 1000000) myRand.seed(std::time(NULL));
         };
     }, "./sfml-ui");
     words.close();
